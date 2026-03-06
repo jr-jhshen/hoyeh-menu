@@ -10,7 +10,6 @@
       --text: #222;
       --muted: #666;
       --border: #ddd;
-      --primary: #0f62fe;
     }
 
     html, body {
@@ -28,7 +27,7 @@
     }
 
     .topbar {
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--border);
       background: #fff;
       position: sticky;
@@ -44,11 +43,17 @@
       gap: 8px;
     }
 
-    .controls-row {
+    .row1 {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
       align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .row2 {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     select,
@@ -62,8 +67,10 @@
     }
 
     select {
-      min-width: 190px;
-      max-width: 100%;
+      width: 170px;
+      min-width: 170px;
+      max-width: 170px;
+      flex: 0 0 170px;
     }
 
     button {
@@ -74,6 +81,10 @@
       color: var(--muted);
       font-size: 14px;
       line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .viewer {
@@ -81,7 +92,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 12px;
+      padding: 8px;
       position: relative;
     }
 
@@ -115,8 +126,16 @@
         padding: 8px 10px;
       }
 
-      .controls-row {
-        gap: 6px;
+      .topbar-inner {
+        gap: 8px;
+      }
+
+      .row1 {
+        gap: 8px;
+      }
+
+      .row2 {
+        gap: 8px;
       }
 
       select,
@@ -126,8 +145,10 @@
       }
 
       select {
-        flex: 1 1 100%;
-        min-width: 0;
+        width: 160px;
+        min-width: 160px;
+        max-width: 160px;
+        flex: 0 0 160px;
       }
 
       .status {
@@ -135,11 +156,11 @@
       }
 
       .viewer {
-        padding: 8px;
+        padding: 6px;
       }
 
       .viewer img {
-        max-height: calc(100vh - 145px);
+        max-height: calc(100vh - 120px);
       }
 
       .msg {
@@ -147,17 +168,41 @@
         padding: 20px;
       }
     }
+
+    @media (max-width: 420px) {
+      select {
+        width: 150px;
+        min-width: 150px;
+        max-width: 150px;
+        flex: 0 0 150px;
+      }
+
+      .status {
+        font-size: 12px;
+      }
+
+      button {
+        padding: 8px 10px;
+      }
+
+      .viewer img {
+        max-height: calc(100vh - 118px);
+      }
+    }
   </style>
 </head>
 <body>
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="controls-row">
+      <div class="row1">
         <select id="dateSelect"></select>
+        <span class="status" id="statusText">Loading...</span>
+      </div>
+
+      <div class="row2">
         <button id="prevBtn">◀ Previous</button>
         <button id="nextBtn">Next ▶</button>
       </div>
-      <div class="status" id="statusText">Loading...</div>
     </div>
   </div>
 
@@ -250,11 +295,11 @@
 
     function updateStatus() {
       if (!currentMenus.length) {
-        statusEl.textContent = `Menu for ${formatDateLabel(currentDate)} is not available yet.`;
+        statusEl.textContent = "No menu available";
         return;
       }
       const item = currentMenus[currentIndex];
-      statusEl.textContent = `${formatDateLabel(currentDate)} · ${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
+      statusEl.textContent = `${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
     }
 
     function showCurrentMenu() {
@@ -287,8 +332,14 @@
 
     async function selectDate(folder) {
       currentDate = folder;
-      currentIndex = 0;
       currentMenus = await loadMenusForDate(folder);
+
+      if (currentMenus.length > 1) {
+        currentIndex = 1;
+      } else {
+        currentIndex = 0;
+      }
+
       dateSelectEl.value = folder;
       showCurrentMenu();
       restartAutoPlay();

@@ -432,13 +432,21 @@
   }
 
   viewer.addEventListener("mousemove", showArrows);
-  viewer.addEventListener("click", showArrows);
 
+  viewer.addEventListener("click", (e) => {
+    showArrows();
+  
+    if (e.target === prevArrow || e.target === nextArrow) return;
+    if (!currentMenus.length) return;
+  
+    next();
+  });
+  
   viewer.addEventListener("touchstart", e => {
     touchStartX = e.changedTouches[0].clientX;
     showArrows();
   }, { passive: true });
-
+  
   viewer.addEventListener("touchend", e => {
     touchEndX = e.changedTouches[0].clientX;
     const delta = touchEndX - touchStartX;

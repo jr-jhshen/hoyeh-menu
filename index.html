@@ -1,551 +1,445 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hoyeh Menu</title>
-  <style>
-    :root {
-      --bg: #ffffff;
-      --text: #222;
-      --muted: #666;
-      --border: #ddd;
-      --arrow-bg: rgba(0, 0, 0, 0.18);
-      --arrow-bg-hover: rgba(0, 0, 0, 0.32);
-      --arrow-color: #ffffff;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hoyeh Menu</title>
 
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-    }
+<style>
 
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+:root{
+--arrow-bg:rgba(0,0,0,0.08);
+--arrow-active:rgba(0,0,0,0.28);
+}
 
-    .topbar {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      background: #fff;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
+html,body{
+margin:0;
+height:100%;
+font-family:Arial,Helvetica,sans-serif;
+background:white;
+overflow:hidden;
+}
 
-    .topbar-inner {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
+body{
+display:flex;
+flex-direction:column;
+}
 
-    select {
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 14px;
-      width: 170px;
-      min-width: 170px;
-      max-width: 170px;
-      flex: 0 0 170px;
-    }
+.topbar{
+padding:8px 10px;
+border-bottom:1px solid #ddd;
+background:#fff;
+}
 
-    .status {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.4;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
-    }
+.topbar-inner{
+display:flex;
+align-items:center;
+gap:10px;
+}
 
-    .viewer {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      position: relative;
-      overflow: hidden;
-      touch-action: pan-y;
-    }
+select{
+border:1px solid #ddd;
+border-radius:8px;
+padding:10px;
+width:170px;
+}
 
-    .viewer img {
-      max-width: 100%;
-      max-height: calc(100vh - 70px);
-      object-fit: contain;
-      display: block;
-      background: #fff;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      user-select: none;
-      -webkit-user-drag: none;
-    }
+.status{
+font-size:14px;
+color:#666;
+}
 
-    .msg {
-      max-width: 760px;
-      text-align: center;
-      color: var(--text);
-      font-size: 20px;
-      line-height: 1.6;
-      padding: 24px;
-    }
+.viewer{
+flex:1;
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+overflow:hidden;
+}
 
-    .msg .sub {
-      display: block;
-      color: var(--muted);
-      font-size: 15px;
-      margin-top: 10px;
-    }
+.viewer img{
+max-width:100%;
+max-height:100%;
+object-fit:contain;
+}
 
-    .nav-arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 52px;
-      height: 72px;
-      border: none;
-      border-radius: 14px;
-      background: var(--arrow-bg);
-      color: var(--arrow-color);
-      font-size: 34px;
-      line-height: 1;
-      cursor: pointer;
-      z-index: 15;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s ease, opacity 0.2s ease;
-      user-select: none;
-    }
+.nav-arrow{
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+width:60px;
+height:80px;
+border:none;
+border-radius:14px;
+font-size:36px;
+background:var(--arrow-bg);
+color:white;
+cursor:pointer;
+opacity:0.05;
+transition:opacity .25s,background .2s;
+}
 
-    .nav-arrow:hover {
-      background: var(--arrow-bg-hover);
-    }
+.nav-arrow.active{
+opacity:1;
+background:var(--arrow-active);
+}
 
-    .nav-arrow.left {
-      left: 10px;
-    }
+.nav-arrow.left{left:10px}
+.nav-arrow.right{right:10px}
 
-    .nav-arrow.right {
-      right: 10px;
-    }
+body.kiosk .topbar{display:none}
 
-    .nav-arrow.hidden {
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      select {
-        font-size: 14px;
-        padding: 9px 10px;
-        width: 160px;
-        min-width: 160px;
-        max-width: 160px;
-        flex: 0 0 160px;
-      }
-
-      .status {
-        font-size: 13px;
-      }
-
-      .viewer img {
-        max-height: calc(100vh - 66px);
-      }
-
-      .msg {
-        font-size: 18px;
-        padding: 20px;
-      }
-
-      .nav-arrow {
-        width: 44px;
-        height: 64px;
-        font-size: 30px;
-      }
-    }
-
-    @media (max-width: 420px) {
-      select {
-        width: 150px;
-        min-width: 150px;
-        max-width: 150px;
-        flex: 0 0 150px;
-      }
-
-      .status {
-        font-size: 12px;
-      }
-
-      .nav-arrow {
-        width: 40px;
-        height: 58px;
-        font-size: 28px;
-      }
-    }
-  </style>
+</style>
 </head>
+
 <body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <select id="dateSelect"></select>
-      <span class="status" id="statusText">Loading...</span>
-    </div>
-  </div>
 
-  <div class="viewer" id="viewer">
-    <button class="nav-arrow left" id="prevArrow" aria-label="Previous">&#8249;</button>
-    <img id="slide" alt="Menu" style="display:none;" />
-    <div class="msg" id="msg">Loading menu...</div>
-    <button class="nav-arrow right" id="nextArrow" aria-label="Next">&#8250;</button>
-  </div>
+<div class="topbar">
+<div class="topbar-inner">
+<select id="dateSelect"></select>
+<span class="status" id="statusText">Loading...</span>
+</div>
+</div>
 
-  <script>
-    const menuFiles = [
-      { file: "breakfast.png", label: "Breakfast", slot: "breakfast" },
-      { file: "lunch.png", label: "Lunch", slot: "lunch" },
-      { file: "dinner.png", label: "Dinner", slot: "dinner" },
-      { file: "supper.png", label: "Supper", slot: "supper" }
-    ];
+<div class="viewer" id="viewer">
 
-    const slotOrder = ["breakfast", "lunch", "dinner", "supper"];
+<button class="nav-arrow left" id="prevArrow">&#8249;</button>
 
-    const slideEl = document.getElementById("slide");
-    const msgEl = document.getElementById("msg");
-    const statusEl = document.getElementById("statusText");
-    const dateSelectEl = document.getElementById("dateSelect");
-    const viewerEl = document.getElementById("viewer");
-    const prevArrow = document.getElementById("prevArrow");
-    const nextArrow = document.getElementById("nextArrow");
+<img id="slide"/>
 
-    let currentDate = null;
-    let currentMenus = [];
-    let currentIndex = 0;
-    let autoTimer = null;
-    let touchStartX = 0;
-    let touchEndX = 0;
+<button class="nav-arrow right" id="nextArrow">&#8250;</button>
 
-    function formatDateForFolder(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}${m}${d}`;
-    }
+</div>
 
-    function formatDateLabel(folder) {
-      const y = folder.slice(0, 4);
-      const m = folder.slice(4, 6);
-      const d = folder.slice(6, 8);
-      const dt = new Date(`${y}-${m}-${d}T00:00:00`);
-      const weekday = dt.toLocaleDateString("en-GB", { weekday: "short" });
-      return `${d}/${m}/${y} ${weekday}`;
-    }
+<script>
 
-    function getNowInfo() {
-      const now = new Date();
-      const totalSeconds =
-        now.getHours() * 3600 +
-        now.getMinutes() * 60 +
-        now.getSeconds();
+const menuFiles=[
+{file:"breakfast.png",label:"Breakfast",slot:"breakfast"},
+{file:"lunch.png",label:"Lunch",slot:"lunch"},
+{file:"dinner.png",label:"Dinner",slot:"dinner"},
+{file:"supper.png",label:"Supper",slot:"supper"}
+];
 
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
+const slotOrder=["breakfast","lunch","dinner","supper"];
 
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
+let currentMenus=[];
+let currentIndex=0;
+let currentDate=null;
+let lastAutoKey="";
 
-      return {
-        now,
-        totalSeconds,
-        todayFolder: formatDateForFolder(today),
-        yesterdayFolder: formatDateForFolder(yesterday),
-        isEarlyMorning: totalSeconds >= 0 && totalSeconds <= 5 * 3600
-      };
-    }
+const slide=document.getElementById("slide");
+const status=document.getElementById("statusText");
+const dateSelect=document.getElementById("dateSelect");
+const viewer=document.getElementById("viewer");
 
-    function getPreferredSlotByTime(totalSeconds) {
-      if (totalSeconds >= 5 * 3600 + 1 && totalSeconds <= 10 * 3600) {
-        return "breakfast";
-      }
-      if (totalSeconds >= 10 * 3600 + 1 && totalSeconds <= 16 * 3600) {
-        return "lunch";
-      }
-      if (totalSeconds >= 16 * 3600 + 1 && totalSeconds <= 22 * 3600) {
-        return "dinner";
-      }
-      return "supper";
-    }
+const prevArrow=document.getElementById("prevArrow");
+const nextArrow=document.getElementById("nextArrow");
 
-    function checkImage(url) {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve(url);
-        img.onerror = () => resolve(null);
-        img.src = url;
-      });
-    }
+let touchStart=0;
+let touchEnd=0;
+let arrowTimer=null;
 
-    async function loadMenusForDate(folder) {
-      const checks = await Promise.all(
-        menuFiles.map(async item => {
-          const url = `images/${folder}/${item.file}`;
-          const ok = await checkImage(url);
-          return ok ? {
-            url,
-            label: item.label,
-            slot: item.slot,
-            sourceDate: folder,
-            isYesterdaySupper: false
-          } : null;
-        })
-      );
-      return checks.filter(Boolean);
-    }
+function getQuery(name){
+return new URLSearchParams(location.search).get(name);
+}
 
-    async function loadYesterdaySupper(folder) {
-      const url = `images/${folder}/supper.png`;
-      const ok = await checkImage(url);
-      if (!ok) return null;
+function isKioskMode(){
 
-      return {
-        url,
-        label: "Yesterday Supper",
-        slot: "supper",
-        sourceDate: folder,
-        isYesterdaySupper: true
-      };
-    }
+const param=getQuery("kiosk");
 
-    async function buildDateOptions() {
-      const result = [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+if(param==="1") return true;
+if(param==="0") return false;
 
-      for (let i = 0; i < 7; i++) {
-        const dt = new Date(today);
-        dt.setDate(today.getDate() + i);
-        const folder = formatDateForFolder(dt);
-        const menus = await loadMenusForDate(folder);
+const w=window.innerWidth;
+const h=window.innerHeight;
 
-        if (i === 0 || menus.length > 0) {
-          result.push({
-            folder,
-            hasMenu: menus.length > 0
-          });
-        }
-      }
+return h>w && w>=1200;
+}
 
-      return result;
-    }
+if(isKioskMode()) document.body.classList.add("kiosk");
 
-    function getNearestMenuIndex(menus, targetSlot) {
-      if (!menus.length) return 0;
+function formatFolder(date){
+const y=date.getFullYear();
+const m=(date.getMonth()+1).toString().padStart(2,"0");
+const d=date.getDate().toString().padStart(2,"0");
+return `${y}${m}${d}`;
+}
 
-      const exactIndex = menus.findIndex(m =>
-        !m.isYesterdaySupper && m.slot === targetSlot
-      );
-      if (exactIndex !== -1) return exactIndex;
+function formatLabel(folder){
 
-      let bestIndex = 0;
-      let bestDistance = Infinity;
-      const targetPos = slotOrder.indexOf(targetSlot);
+const y=folder.slice(0,4);
+const m=folder.slice(4,6);
+const d=folder.slice(6,8);
 
-      for (let i = 0; i < menus.length; i++) {
-        const pos = slotOrder.indexOf(menus[i].slot);
-        if (pos === -1) continue;
+const dt=new Date(`${y}-${m}-${d}`);
 
-        const clockwise = (pos - targetPos + 4) % 4;
-        const anticlockwise = (targetPos - pos + 4) % 4;
-        const distance = Math.min(clockwise, anticlockwise);
+const weekday=dt.toLocaleDateString("en-GB",{weekday:"short"});
 
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          bestIndex = i;
-        }
-      }
+return `${d}/${m}/${y} ${weekday}`;
+}
 
-      return bestIndex;
-    }
+function checkImage(url){
+return new Promise(res=>{
+const img=new Image();
+img.onload=()=>res(url);
+img.onerror=()=>res(null);
+img.src=url;
+});
+}
 
-    async function loadDisplayMenus(folder) {
-      const nowInfo = getNowInfo();
-      const todayMenus = await loadMenusForDate(folder);
+async function loadMenus(folder){
 
-      if (folder !== nowInfo.todayFolder || !nowInfo.isEarlyMorning) {
-        return todayMenus;
-      }
+const results=await Promise.all(
+menuFiles.map(async item=>{
+const url=`images/${folder}/${item.file}`;
+const ok=await checkImage(url);
+if(!ok) return null;
+return {...item,url:url+"?t="+Date.now(),date:folder};
+})
+);
 
-      const yesterdaySupper = await loadYesterdaySupper(nowInfo.yesterdayFolder);
+return results.filter(Boolean);
+}
 
-      if (yesterdaySupper) {
-        return [yesterdaySupper, ...todayMenus];
-      }
+async function loadYesterdaySupper(folder){
 
-      return todayMenus;
-    }
+const url=`images/${folder}/supper.png`;
+const ok=await checkImage(url);
+if(!ok) return null;
 
-    function getDefaultIndexForDisplayMenus(menus, folder) {
-      if (!menus.length) return 0;
+return{
+slot:"supper",
+label:"Yesterday Supper",
+url:url+"?t="+Date.now(),
+date:folder
+};
+}
 
-      const nowInfo = getNowInfo();
-      const preferredSlot = getPreferredSlotByTime(nowInfo.totalSeconds);
+function getNowInfo(){
 
-      if (
-        folder === nowInfo.todayFolder &&
-        nowInfo.isEarlyMorning &&
-        menus[0] &&
-        menus[0].isYesterdaySupper
-      ) {
-        return 0;
-      }
+const now=new Date();
 
-      return getNearestMenuIndex(menus, preferredSlot);
-    }
+const seconds=now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
 
-    function updateStatus() {
-      if (!currentMenus.length) {
-        statusEl.textContent = "No menu available";
-        return;
-      }
+const today=new Date(now);
+today.setHours(0,0,0,0);
 
-      const item = currentMenus[currentIndex];
-      statusEl.textContent = `${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
-    }
+const yesterday=new Date(today);
+yesterday.setDate(today.getDate()-1);
 
-    function updateArrowVisibility() {
-      const hasMenus = currentMenus.length > 0;
-      prevArrow.classList.toggle("hidden", !hasMenus);
-      nextArrow.classList.toggle("hidden", !hasMenus);
-    }
+return{
+seconds,
+todayFolder:formatFolder(today),
+yesterdayFolder:formatFolder(yesterday),
+early:seconds<=5*3600
+};
+}
 
-    function showCurrentMenu() {
-      if (!currentMenus.length) {
-        slideEl.style.display = "none";
-        msgEl.style.display = "block";
-        msgEl.innerHTML = `
-          Menu for <b>${formatDateLabel(currentDate)}</b> is not available yet.
-          <span class="sub">Please select another available date.</span>
-        `;
-        updateStatus();
-        updateArrowVisibility();
-        return;
-      }
+function preferredSlot(seconds){
 
-      msgEl.style.display = "none";
-      slideEl.style.display = "block";
-      slideEl.src = currentMenus[currentIndex].url;
-      updateStatus();
-      updateArrowVisibility();
-    }
+if(seconds<=5*3600) return "supper";
+if(seconds<=10*3600) return "breakfast";
+if(seconds<=16*3600) return "lunch";
+if(seconds<=22*3600) return "dinner";
+return "supper";
 
-    function restartAutoPlay() {
-      if (autoTimer) clearInterval(autoTimer);
-      if (currentMenus.length > 1) {
-        autoTimer = setInterval(() => {
-          currentIndex = (currentIndex + 1) % currentMenus.length;
-          showCurrentMenu();
-        }, 5000);
-      }
-    }
+}
 
-    async function selectDate(folder) {
-      currentDate = folder;
-      currentMenus = await loadDisplayMenus(folder);
-      currentIndex = getDefaultIndexForDisplayMenus(currentMenus, folder);
+function nearestIndex(menus,target){
 
-      dateSelectEl.value = folder;
-      showCurrentMenu();
-      restartAutoPlay();
-    }
+if(!menus.length) return 0;
 
-    function goPrev() {
-      if (!currentMenus.length) return;
-      currentIndex = (currentIndex - 1 + currentMenus.length) % currentMenus.length;
-      showCurrentMenu();
-      restartAutoPlay();
-    }
+const exact=menus.findIndex(m=>m.slot===target);
+if(exact!==-1) return exact;
 
-    function goNext() {
-      if (!currentMenus.length) return;
-      currentIndex = (currentIndex + 1) % currentMenus.length;
-      showCurrentMenu();
-      restartAutoPlay();
-    }
+const targetPos=slotOrder.indexOf(target);
 
-    function bindSwipe() {
-      viewerEl.addEventListener("touchstart", (e) => {
-        if (!e.changedTouches || !e.changedTouches.length) return;
-        touchStartX = e.changedTouches[0].clientX;
-      }, { passive: true });
+let best=0;
+let dist=99;
 
-      viewerEl.addEventListener("touchend", (e) => {
-        if (!e.changedTouches || !e.changedTouches.length) return;
-        touchEndX = e.changedTouches[0].clientX;
+menus.forEach((m,i)=>{
 
-        const deltaX = touchEndX - touchStartX;
-        const threshold = 40;
+const pos=slotOrder.indexOf(m.slot);
 
-        if (Math.abs(deltaX) < threshold) return;
+const d=Math.min(
+(pos-targetPos+4)%4,
+(targetPos-pos+4)%4
+);
 
-        if (deltaX < 0) {
-          goNext();
-        } else {
-          goPrev();
-        }
-      }, { passive: true });
-    }
+if(d<dist){
+dist=d;
+best=i;
+}
 
-    function bindKeyboard() {
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowLeft") goPrev();
-        if (e.key === "ArrowRight") goNext();
-      });
-    }
+});
 
-    async function init() {
-      const dateOptions = await buildDateOptions();
+return best;
 
-      if (!dateOptions.length) {
-        msgEl.innerHTML = `
-          No upcoming menu is available.
-          <span class="sub">Please upload menu images for today or the next 7 days.</span>
-        `;
-        statusEl.textContent = "No upcoming menu";
-        dateSelectEl.disabled = true;
-        prevArrow.classList.add("hidden");
-        nextArrow.classList.add("hidden");
-        return;
-      }
+}
 
-      dateSelectEl.innerHTML = "";
-      for (const item of dateOptions) {
-        const option = document.createElement("option");
-        option.value = item.folder;
-        option.textContent = formatDateLabel(item.folder);
-        dateSelectEl.appendChild(option);
-      }
+function showMenu(){
 
-      dateSelectEl.addEventListener("change", e => selectDate(e.target.value));
-      prevArrow.addEventListener("click", goPrev);
-      nextArrow.addEventListener("click", goNext);
+if(!currentMenus.length){
+slide.style.display="none";
+status.textContent="No menu available";
+return;
+}
 
-      bindSwipe();
-      bindKeyboard();
+slide.style.display="block";
+slide.src=currentMenus[currentIndex].url;
 
-      await selectDate(dateOptions[0].folder);
-    }
+status.textContent=`${currentMenus[currentIndex].label} · ${currentIndex+1} / ${currentMenus.length}`;
 
-    init();
-  </script>
+}
+
+function next(){
+
+if(!currentMenus.length) return;
+
+currentIndex=(currentIndex+1)%currentMenus.length;
+
+showMenu();
+showArrows();
+
+}
+
+function prev(){
+
+if(!currentMenus.length) return;
+
+currentIndex=(currentIndex-1+currentMenus.length)%currentMenus.length;
+
+showMenu();
+showArrows();
+
+}
+
+function showArrows(){
+
+prevArrow.classList.add("active");
+nextArrow.classList.add("active");
+
+clearTimeout(arrowTimer);
+
+arrowTimer=setTimeout(()=>{
+prevArrow.classList.remove("active");
+nextArrow.classList.remove("active");
+},1800);
+
+}
+
+viewer.addEventListener("mousemove",showArrows);
+viewer.addEventListener("click",showArrows);
+
+viewer.addEventListener("touchstart",e=>{
+touchStart=e.changedTouches[0].clientX;
+showArrows();
+},{passive:true});
+
+viewer.addEventListener("touchend",e=>{
+
+touchEnd=e.changedTouches[0].clientX;
+
+const delta=touchEnd-touchStart;
+
+if(Math.abs(delta)<40) return;
+
+delta<0?next():prev();
+
+},{passive:true});
+
+document.addEventListener("keydown",e=>{
+if(e.key==="ArrowLeft") prev();
+if(e.key==="ArrowRight") next();
+});
+
+prevArrow.onclick=prev;
+nextArrow.onclick=next;
+
+async function selectDate(folder){
+
+currentDate=folder;
+
+const todayMenus=await loadMenus(folder);
+
+const now=getNowInfo();
+
+if(folder===now.todayFolder && now.early){
+
+const ys=await loadYesterdaySupper(now.yesterdayFolder);
+
+currentMenus=ys?[ys,...todayMenus]:todayMenus;
+
+}else{
+
+currentMenus=todayMenus;
+
+}
+
+const slot=preferredSlot(now.seconds);
+
+currentIndex=nearestIndex(currentMenus,slot);
+
+showMenu();
+
+}
+
+async function init(){
+
+const today=new Date();
+today.setHours(0,0,0,0);
+
+const dates=[];
+
+for(let i=0;i<7;i++){
+
+const d=new Date(today);
+d.setDate(today.getDate()+i);
+
+const folder=formatFolder(d);
+
+const menus=await loadMenus(folder);
+
+if(i===0 || menus.length) dates.push(folder);
+
+}
+
+dates.forEach(d=>{
+const opt=document.createElement("option");
+opt.value=d;
+opt.textContent=formatLabel(d);
+dateSelect.appendChild(opt);
+});
+
+dateSelect.onchange=()=>selectDate(dateSelect.value);
+
+await selectDate(dates[0]);
+
+setInterval(autoUpdate,30000);
+
+}
+
+async function autoUpdate(){
+
+if(!currentDate) return;
+
+const now=getNowInfo();
+
+if(currentDate!==now.todayFolder) return;
+
+const key=preferredSlot(now.seconds)+(now.early?"y":"");
+
+if(key===lastAutoKey) return;
+
+lastAutoKey=key;
+
+await selectDate(currentDate);
+
+}
+
+init();
+
+</script>
 </body>
 </html>

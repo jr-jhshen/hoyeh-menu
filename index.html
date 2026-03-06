@@ -189,11 +189,13 @@
 
   <script>
     const menuFiles = [
-      { file: "breakfast.png", label: "Breakfast" },
-      { file: "lunch.png", label: "Lunch" },
-      { file: "dinner.png", label: "Dinner" },
-      { file: "supper.png", label: "Supper" }
+      { file: "breakfast.png", label: "Breakfast", slot: "breakfast" },
+      { file: "lunch.png", label: "Lunch", slot: "lunch" },
+      { file: "dinner.png", label: "Dinner", slot: "dinner" },
+      { file: "supper.png", label: "Supper", slot: "supper" }
     ];
+
+    const slotOrder = ["breakfast", "lunch", "dinner", "supper"];
 
     const slideEl = document.getElementById("slide");
     const msgEl = document.getElementById("msg");
@@ -223,6 +225,41 @@
       return `${d}/${m}/${y} ${weekday}`;
     }
 
+    function getNowInfo() {
+      const now = new Date();
+      const totalSeconds =
+        now.getHours() * 3600 +
+        now.getMinutes() * 60 +
+        now.getSeconds();
+
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+
+      return {
+        now,
+        totalSeconds,
+        todayFolder: formatDateForFolder(today),
+        yesterdayFolder: formatDateForFolder(yesterday),
+        isEarlyMorning: totalSeconds >= 0 && totalSeconds <= 5 * 3600
+      };
+    }
+
+    function getPreferredSlotByTime(totalSeconds) {
+      if (totalSeconds >= 5 * 3600 + 1 && totalSeconds <= 10 * 3600) {
+        return "breakfast";
+      }
+      if (totalSeconds >= 10 * 3600 + 1 && totalSeconds <= 16 * 3600) {
+        return "lunch";
+      }
+      if (totalSeconds >= 16 * 3600 + 1 && totalSeconds <= 22 * 3600) {
+        return "dinner";
+      }
+      return "supper";
+    }
+
     function checkImage(url) {
       return new Promise(resolve => {
         const img = new Image();
@@ -237,10 +274,30 @@
         menuFiles.map(async item => {
           const url = `images/${folder}/${item.file}`;
           const ok = await checkImage(url);
-          return ok ? { url, label: item.label } : null;
+          return ok ? {
+            url,
+            label: item.label,
+            slot: item.slot,
+            sourceDate: folder,
+            isYesterdaySupper: false
+          } : null;
         })
       );
       return checks.filter(Boolean);
+    }
+
+    async function loadYesterdaySupper(folder) {
+      const url = `images/${folder}/supper.png`;
+      const ok = await checkImage(url);
+      if (!ok) return null;
+
+      return {
+        url,
+        label: "Yesterday Supper",
+        slot: "supper",
+        sourceDate: folder,
+        isYesterdaySupper: true
+      };
     }
 
     async function buildDateOptions() {
@@ -254,7 +311,6 @@
         const folder = formatDateForFolder(dt);
         const menus = await loadMenusForDate(folder);
 
-        // 今天必须显示；未来日期只有存在至少1张图才显示
         if (i === 0 || menus.length > 0) {
           result.push({
             folder,
@@ -266,11 +322,77 @@
       return result;
     }
 
+    function getNearestMenuIndex(menus, targetSlot) {
+      if (!menus.length) return 0;
+
+      const exactIndex = menus.findIndex(m =>
+        !m.isYesterdaySupper && m.slot === targetSlot
+      );
+      if (exactIndex !== -1) return exactIndex;
+
+      let bestIndex = 0;
+      let bestDistance = Infinity;
+      const targetPos = slotOrder.indexOf(targetSlot);
+
+      for (let i = 0; i < menus.length; i++) {
+        const slot = menus[i].slot;
+        const pos = slotOrder.indexOf(slot);
+        if (pos === -1) continue;
+
+        const clockwise = (pos - targetPos + 4) % 4;
+        const anticlockwise = (targetPos - pos + 4) % 4;
+        const distance = Math.min(clockwise, anticlockwise);
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
+      }
+
+      return bestIndex;
+    }
+
+    async function loadDisplayMenus(folder) {
+      const nowInfo = getNowInfo();
+      const todayMenus = await loadMenusForDate(folder);
+
+      if (folder !== nowInfo.todayFolder || !nowInfo.isEarlyMorning) {
+        return todayMenus;
+      }
+
+      const yesterdaySupper = await loadYesterdaySupper(nowInfo.yesterdayFolder);
+
+      if (yesterdaySupper) {
+        return [yesterdaySupper, ...todayMenus];
+      }
+
+      return todayMenus;
+    }
+
+    function getDefaultIndexForDisplayMenus(menus, folder) {
+      if (!menus.length) return 0;
+
+      const nowInfo = getNowInfo();
+      const preferredSlot = getPreferredSlotByTime(nowInfo.totalSeconds);
+
+      if (
+        folder === nowInfo.todayFolder &&
+        nowInfo.isEarlyMorning &&
+        menus[0] &&
+        menus[0].isYesterdaySupper
+      ) {
+        return 0;
+      }
+
+      return getNearestMenuIndex(menus, preferredSlot);
+    }
+
     function updateStatus() {
       if (!currentMenus.length) {
         statusEl.textContent = "No menu available";
         return;
       }
+
       const item = currentMenus[currentIndex];
       statusEl.textContent = `${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
     }
@@ -305,13 +427,8 @@
 
     async function selectDate(folder) {
       currentDate = folder;
-      currentMenus = await loadMenusForDate(folder);
-
-      if (currentMenus.length > 1) {
-        currentIndex = 1; // 默认显示 Lunch
-      } else {
-        currentIndex = 0;
-      }
+      currentMenus = await loadDisplayMenus(folder);
+      currentIndex = getDefaultIndexForDisplayMenus(currentMenus, folder);
 
       dateSelectEl.value = folder;
       showCurrentMenu();

@@ -231,6 +231,7 @@
   let lastAutoKey = "";
   let activeImg = imgA;
   let standbyImg = imgB;
+  let knownDates = new Set();
 
   function getQuery(name) {
     return new URLSearchParams(window.location.search).get(name);
@@ -279,15 +280,14 @@
     });
   }
 
-  function preloadImage(url) {
-    const img = new Image();
-    img.src = url;
-  }
-
-  function preloadMenus(menus) {
-    menus.forEach(item => {
-      if (item && item.url) preloadImage(item.url);
-    });
+  async function checkHasAnyMenu(folder) {
+    // 轻量检查：按优先顺序找一张存在即可
+    const probeFiles = ["lunch.png", "dinner.png", "breakfast.png", "supper.png"];
+    for (const file of probeFiles) {
+      const ok = await checkImage(buildImageUrl(folder, file));
+      if (ok) return true;
+    }
+    return false;
   }
 
   async function loadMenus(folder) {
@@ -435,18 +435,18 @@
 
   viewer.addEventListener("click", (e) => {
     showArrows();
-  
+
     if (e.target === prevArrow || e.target === nextArrow) return;
     if (!currentMenus.length) return;
-  
+
     next();
   });
-  
+
   viewer.addEventListener("touchstart", e => {
     touchStartX = e.changedTouches[0].clientX;
     showArrows();
   }, { passive: true });
-  
+
   viewer.addEventListener("touchend", e => {
     touchEndX = e.changedTouches[0].clientX;
     const delta = touchEndX - touchStartX;
@@ -462,6 +462,16 @@
   prevArrow.onclick = prev;
   nextArrow.onclick = next;
 
+  function addDateOption(folder) {
+    if (knownDates.has(folder)) return;
+    knownDates.add(folder);
+
+    const option = document.createElement("option");
+    option.value = folder;
+    option.textContent = formatLabel(folder);
+    dateSelect.appendChild(option);
+  }
+
   async function selectDate(folder) {
     currentDate = folder;
 
@@ -475,47 +485,46 @@
       currentMenus = todayMenus;
     }
 
-    //preloadMenus(currentMenus);
-
     const slot = preferredSlot(now.seconds);
     currentIndex = nearestIndex(currentMenus, slot);
 
     showMenu();
   }
 
-  async function init() {
+  async function initTodayOnly() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dates = [];
+    const todayFolder = formatFolder(today);
 
-    for (let i = 0; i < 7; i++) {
+    dateSelect.innerHTML = "";
+    knownDates.clear();
+    addDateOption(todayFolder);
+
+    dateSelect.value = todayFolder;
+    dateSelect.onchange = () => selectDate(dateSelect.value);
+
+    await selectDate(todayFolder);
+
+    const now = getNowInfo();
+    lastAutoKey = preferredSlot(now.seconds) + (now.early ? "y" : "");
+  }
+
+  async function loadFutureDatesInBackground() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 1; i < 7; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
 
       const folder = formatFolder(d);
-      const menus = await loadMenus(folder);
+      const hasMenu = await checkHasAnyMenu(folder);
 
-      if (i === 0 || menus.length) {
-        dates.push(folder);
+      if (hasMenu) {
+        addDateOption(folder);
       }
     }
-
-    dateSelect.innerHTML = "";
-    dates.forEach(d => {
-      const opt = document.createElement("option");
-      opt.value = d;
-      opt.textContent = formatLabel(d);
-      dateSelect.appendChild(opt);
-    });
-
-    dateSelect.onchange = () => selectDate(dateSelect.value);
-
-    await selectDate(dates[0]);
-
-    const now = getNowInfo();
-    lastAutoKey = preferredSlot(now.seconds) + (now.early ? "y" : "");
-    setInterval(autoUpdate, 30000);
   }
 
   async function autoUpdate() {
@@ -529,6 +538,12 @@
 
     lastAutoKey = key;
     await selectDate(currentDate);
+  }
+
+  async function init() {
+    await initTodayOnly();
+    loadFutureDatesInBackground();
+    setInterval(autoUpdate, 30000);
   }
 
   init();

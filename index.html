@@ -1,70 +1,327 @@
 <!doctype html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hoyeh Menu</title>
   <style>
-    html, body { margin:0; height:100%; background:#000; }
-    .wrap { height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
-    img { max-width:100vw; max-height:100vh; object-fit:contain; display:block; }
-    .badge { position:absolute; top:12px; right:12px; padding:6px 10px; border-radius:999px;
-             background:rgba(0,0,0,.55); color:#fff; font:14px/1.2 system-ui, sans-serif; }
-    .msg { color:#fff; font:20px/1.6 system-ui, sans-serif; padding:24px; text-align:center; }
+    :root {
+      --bg: #ffffff;
+      --text: #222;
+      --muted: #666;
+      --border: #ddd;
+      --primary: #0f62fe;
+      --primary-light: #e8f0ff;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .topbar-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .date-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .date-btn,
+    .nav-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .date-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .viewer {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      position: relative;
+    }
+
+    .viewer img {
+      max-width: 100%;
+      max-height: calc(100vh - 180px);
+      object-fit: contain;
+      display: block;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      background: #fff;
+    }
+
+    .msg {
+      max-width: 760px;
+      text-align: center;
+      color: var(--text);
+      font-size: 22px;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .msg .sub {
+      display: block;
+      color: var(--muted);
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .viewer img {
+        max-height: calc(100vh - 220px);
+      }
+
+      .msg {
+        font-size: 18px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="badge" id="badge"></div>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="date-list" id="dateList"></div>
+
+      <div class="controls">
+        <button class="nav-btn" id="prevBtn">◀ Previous</button>
+        <button class="nav-btn" id="nextBtn">Next ▶</button>
+        <span class="status" id="statusText">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="viewer" id="viewer">
     <img id="slide" alt="Menu" style="display:none;" />
-    <div class="msg" id="msg">Loading menu…</div>
+    <div class="msg" id="msg">Loading menu...</div>
   </div>
 
   <script>
-    function yyyymmdd(d=new Date()){
-      const y=d.getFullYear();
-      const m=String(d.getMonth()+1).padStart(2,'0');
-      const day=String(d.getDate()).padStart(2,'0');
-      return `${y}${m}${day}`;
+    const availableDates = [
+      "20260306",
+      "20260307",
+      "20260308",
+      "20260309",
+      "20260310",
+      "20260311",
+      "20260312"
+    ];
+
+    const menuFiles = [
+      { file: "breakfast.png", label: "Breakfast" },
+      { file: "lunch.png", label: "Lunch" },
+      { file: "dinner.png", label: "Dinner" },
+      { file: "supper.png", label: "Supper" }
+    ];
+
+    const slideEl = document.getElementById("slide");
+    const msgEl = document.getElementById("msg");
+    const statusEl = document.getElementById("statusText");
+    const dateListEl = document.getElementById("dateList");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    let currentDate = null;
+    let currentMenus = [];
+    let currentIndex = 0;
+    let autoTimer = null;
+
+    function formatDateForFolder(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}${m}${d}`;
     }
 
-    const folder = yyyymmdd();
-    document.getElementById('badge').textContent = folder;
+    function formatDateLabel(folder) {
+      const y = folder.slice(0, 4);
+      const m = folder.slice(4, 6);
+      const d = folder.slice(6, 8);
+      const dt = new Date(`${y}-${m}-${d}T00:00:00`);
+      const weekday = dt.toLocaleDateString("en-GB", { weekday: "short" });
+      return `${d}/${m}/${y} ${weekday}`;
+    }
 
-    const files = ["breakfast.png","lunch.png","dinner.png","supper.png"];
-    const base = `images/${folder}/`;
-    const urls = files.map(f => base + f);
+    function getNext7DaysAvailable() {
+      const result = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const img = document.getElementById('slide');
-    const msg = document.getElementById('msg');
+      for (let i = 0; i < 7; i++) {
+        const dt = new Date(today);
+        dt.setDate(today.getDate() + i);
+        const folder = formatDateForFolder(dt);
+        if (availableDates.includes(folder)) {
+          result.push(folder);
+        }
+      }
+      return result;
+    }
 
-    function check(url){
-      return new Promise(resolve=>{
-        const t = new Image();
-        t.onload=()=>resolve(url);
-        t.onerror=()=>resolve(null);
-        t.src=url;
+    function checkImage(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => resolve(null);
+        img.src = url;
       });
     }
 
-    (async ()=>{
-      const results = await Promise.all(urls.map(check));
-      const ok = results.filter(Boolean);
+    async function loadMenusForDate(folder) {
+      const checks = await Promise.all(
+        menuFiles.map(async item => {
+          const url = `images/${folder}/${item.file}`;
+          const ok = await checkImage(url);
+          return ok ? { url, label: item.label } : null;
+        })
+      );
+      return checks.filter(Boolean);
+    }
 
-      if(ok.length===0){
-        msg.innerHTML = `No menu images found for <b>${folder}</b><br/>Please upload 4 images to <b>${base}</b>`;
+    function updateStatus() {
+      if (!currentMenus.length) {
+        statusEl.textContent = `No menu available for ${formatDateLabel(currentDate)}`;
+        return;
+      }
+      const item = currentMenus[currentIndex];
+      statusEl.textContent = `${formatDateLabel(currentDate)} · ${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
+    }
+
+    function showCurrentMenu() {
+      if (!currentMenus.length) {
+        slideEl.style.display = "none";
+        msgEl.style.display = "block";
+        msgEl.innerHTML = `
+          Menu for <b>${formatDateLabel(currentDate)}</b> is not available yet.
+          <span class="sub">Please select another date.</span>
+        `;
+        updateStatus();
         return;
       }
 
-      msg.style.display="none";
-      img.style.display="block";
-      let i=0;
-      img.src = ok[i];
+      msgEl.style.display = "none";
+      slideEl.style.display = "block";
+      slideEl.src = currentMenus[currentIndex].url;
+      updateStatus();
+    }
 
-      if(ok.length>1){
-        setInterval(()=>{ i=(i+1)%ok.length; img.src=ok[i]; }, 5000);
+    function restartAutoPlay() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
       }
-    })();
+      if (currentMenus.length > 1) {
+        autoTimer = setInterval(() => {
+          currentIndex = (currentIndex + 1) % currentMenus.length;
+          showCurrentMenu();
+        }, 5000);
+      }
+    }
+
+    async function selectDate(folder) {
+      currentDate = folder;
+      currentIndex = 0;
+      currentMenus = await loadMenusForDate(folder);
+      showCurrentMenu();
+      restartAutoPlay();
+
+      document.querySelectorAll(".date-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.folder === folder);
+      });
+    }
+
+    function goPrev() {
+      if (!currentMenus.length) return;
+      currentIndex = (currentIndex - 1 + currentMenus.length) % currentMenus.length;
+      showCurrentMenu();
+      restartAutoPlay();
+    }
+
+    function goNext() {
+      if (!currentMenus.length) return;
+      currentIndex = (currentIndex + 1) % currentMenus.length;
+      showCurrentMenu();
+      restartAutoPlay();
+    }
+
+    async function init() {
+      const dateOptions = getNext7DaysAvailable();
+
+      if (!dateOptions.length) {
+        msgEl.innerHTML = `
+          No upcoming menu is available.
+          <span class="sub">Please upload menu images for the next 7 days.</span>
+        `;
+        statusEl.textContent = "No upcoming menu";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      dateListEl.innerHTML = "";
+      for (const folder of dateOptions) {
+        const btn = document.createElement("button");
+        btn.className = "date-btn";
+        btn.textContent = formatDateLabel(folder);
+        btn.dataset.folder = folder;
+        btn.addEventListener("click", () => selectDate(folder));
+        dateListEl.appendChild(btn);
+      }
+
+      prevBtn.addEventListener("click", goPrev);
+      nextBtn.addEventListener("click", goNext);
+
+      await selectDate(dateOptions[0]);
+    }
+
+    init();
   </script>
 </body>
 </html>

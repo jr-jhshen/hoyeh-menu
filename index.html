@@ -103,6 +103,11 @@
     height: calc(var(--design-h) * 1px);
     transform: translate(-50%, -50%) scale(1);
     transform-origin: center center;
+    visibility: hidden;
+  }
+
+  .design-canvas.ready {
+    visibility: visible;
   }
 
   .menu-page {
@@ -226,7 +231,7 @@
     font-size: 34px;
     line-height: 1.6;
     padding: 28px 32px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.92);
     border-radius: 14px;
     z-index: 5;
   }
@@ -468,10 +473,6 @@
     return best;
   }
 
-  function createListHtml(items) {
-    return items.map(x => `<div>${escapeHtml(x)}</div>`).join("");
-  }
-
   function escapeHtml(text) {
     return String(text)
       .replaceAll("&", "&amp;")
@@ -481,14 +482,18 @@
       .replaceAll("'", "&#39;");
   }
 
+  function createListHtml(items) {
+    return (items || []).map(x => `<div>${escapeHtml(x)}</div>`).join("");
+  }
+
   function buildBreakfastPage(menu) {
     return `
       <img class="menu-bg" src="templates/breakfast-bg.png" alt="">
       <div class="content-layer">
-        <div class="menu-title">${escapeHtml(menu.title)}</div>
-        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
+        <div class="menu-title">${escapeHtml(menu.title || "")}</div>
+        <div class="menu-date">${escapeHtml(menu.date_text || "")}</div>
         <div class="breakfast-lines">
-          ${createListHtml(menu.lines || [])}
+          ${createListHtml(menu.lines)}
         </div>
       </div>
     `;
@@ -498,22 +503,22 @@
     return `
       <img class="menu-bg" src="templates/mainmeal-bg.png" alt="">
       <div class="content-layer">
-        <div class="menu-title">${escapeHtml(menu.title)}</div>
-        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
+        <div class="menu-title">${escapeHtml(menu.title || "")}</div>
+        <div class="menu-date">${escapeHtml(menu.date_text || "")}</div>
 
         <div class="home-taste-block">
           <div class="section-title">${escapeHtml(menu.homeTasteTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.homeTaste || [])}</div>
+          <div class="section-list">${createListHtml(menu.homeTaste)}</div>
         </div>
 
         <div class="daily-special-block">
           <div class="section-title">${escapeHtml(menu.dailySpecialTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.dailySpecial || [])}</div>
+          <div class="section-list">${createListHtml(menu.dailySpecial)}</div>
         </div>
 
         <div class="noodle-special-block">
           <div class="section-title">${escapeHtml(menu.noodleSpecialTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.noodleSpecial || [])}</div>
+          <div class="section-list">${createListHtml(menu.noodleSpecial)}</div>
         </div>
       </div>
     `;
@@ -575,10 +580,8 @@
 
   viewer.addEventListener("click", (e) => {
     showArrows();
-
     if (e.target === prevArrow || e.target === nextArrow) return;
     if (!currentMenus.length) return;
-
     next();
   });
 
@@ -599,8 +602,25 @@
     if (e.key === "ArrowRight") next();
   });
 
-  prevArrow.onclick = prev;
-  nextArrow.onclick = next;
+  prevArrow.addEventListener("click", prev);
+  nextArrow.addEventListener("click", next);
+
+  function preloadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  }
+
+  async function preloadTemplateImages() {
+    const results = await Promise.all([
+      preloadImage("templates/breakfast-bg.png"),
+      preloadImage("templates/mainmeal-bg.png")
+    ]);
+    return results.every(Boolean);
+  }
 
   async function loadJsonData() {
     const res = await fetch(`data/menu-data.json?v=${Date.now()}`);
@@ -622,724 +642,6 @@
         result.push(folder);
       }
     }
-
-    return result;
-  }
-
-  function buildMenusForDate(folder) {
-    const dayData = menuData[folder];
-    if (!dayData) return [];
-
-    const result = [];
-
-    if (dayData.breakfast) {
-      result.push({
-        slot: "breakfast",
-        label: "Breakfast",
-        data: dayData.breakfast,
-        isYesterdaySupper: false
-      });
-    }
-
-    if (dayData.lunch) {
-      result.push({
-        slot: "lunch",
-        label: "Lunch",
-        data: dayData.lunch,
-        isYesterdaySupper: false
-      });
-    }
-
-    if (dayData.dinner) {
-      result.push({
-        slot: "dinner",
-        label: "Dinner",
-        data: dayData.dinner,
-        isYesterdaySupper: false
-      });
-    }
-
-    if (dayData.supper) {
-      result.push({
-        slot: "supper",
-        label: "Supper",
-        data: dayData.supper,
-        isYesterdaySupper: false
-      });
-    }
-
-    return result;
-  }
-
-  function buildYesterdaySupper(folder) {
-    const dayData = menuData[folder];
-    if (!dayData || !dayData.supper) return null;
-
-    return {
-      slot: "supper",
-      label: "Yesterday Supper",
-      data: dayData.supper,
-      isYesterdaySupper: true
-    };
-  }
-
-  async function selectDate(folder) {
-    currentDate = folder;
-
-    const todayMenus = buildMenusForDate(folder);
-    const now = getNowInfo();
-
-    if (folder === now.todayFolder && now.early) {
-      const ys = buildYesterdaySupper(now.yesterdayFolder);
-      currentMenus = ys ? [ys, ...todayMenus] : todayMenus;
-    } else {
-      currentMenus = todayMenus;
-    }
-
-    const slot = preferredSlot(now.seconds);
-    currentIndex = nearestIndex(currentMenus, slot);
-
-    showMenu();
-  }
-
-  async function autoUpdate() {
-    if (!currentDate) return;
-
-    const now = getNowInfo();
-    if (currentDate !== now.todayFolder) return;
-
-    const key = preferredSlot(now.seconds) + (now.early ? "y" : "");
-    if (key === lastAutoKey) return;
-
-    lastAutoKey = key;
-    await selectDate(currentDate);
-  }
-
-  <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hoyeh Menu</title>
-
-<style>
-  :root{
-    --arrow-bg: rgba(0,0,0,0.12);
-    --arrow-active: rgba(0,0,0,0.32);
-
-    --design-w: 2160;
-    --design-h: 3840;
-
-    /* ===== layout tuning ===== */
-    --title-top: 450px;
-    --date-top: 660px;
-
-    --breakfast-top: 1100px;
-
-    --home-top: 980px;
-    --daily-top: 2050px;
-    --noodle-top: 3120px;
-
-    --content-left: 200px;
-    --content-width: 1760px;
-  }
-
-  html, body {
-    margin: 0;
-    height: 100%;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #fff;
-    overflow: hidden;
-  }
-
-  body {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .topbar {
-    padding: 8px 10px;
-    border-bottom: 1px solid #ddd;
-    background: #fff;
-    flex: 0 0 auto;
-  }
-
-  .topbar-inner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  select {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    width: 170px;
-    min-width: 170px;
-    background: #fff;
-    font-size: 14px;
-  }
-
-  .status {
-    font-size: 14px;
-    color: #666;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-  }
-
-  .viewer {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    background: #f5f5f5;
-    touch-action: pan-y;
-  }
-
-  body.kiosk .topbar {
-    display: none;
-  }
-
-  .canvas-wrap {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .design-canvas {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: calc(var(--design-w) * 1px);
-    height: calc(var(--design-h) * 1px);
-    transform: translate(-50%, -50%) scale(1);
-    transform-origin: center center;
-  }
-
-  .menu-page {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity .28s ease;
-  }
-
-  .menu-page.visible {
-    opacity: 1;
-  }
-
-  .menu-bg {
-    position: absolute;
-    inset: 0;
-    width: 2160px;
-    height: 3840px;
-    object-fit: fill;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  .content-layer {
-    position: absolute;
-    inset: 0;
-    color: #333;
-    text-align: center;
-    box-sizing: border-box;
-  }
-
-  .menu-title {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    top: var(--title-top);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 110px;
-    letter-spacing: 0.12em;
-    color: #383838;
-    font-weight: 500;
-  }
-
-  .menu-date {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    top: var(--date-top);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 84px;
-    letter-spacing: 0.08em;
-    color: #3d3d3d;
-    font-weight: 500;
-  }
-
-  .breakfast-lines {
-    position: absolute;
-    top: var(--breakfast-top);
-    left: 250px;
-    width: 1660px;
-    display: flex;
-    flex-direction: column;
-    gap: 68px;
-    font-size: 72px;
-    font-weight: 700;
-    line-height: 1.26;
-    color: #3a3a3a;
-    white-space: pre-wrap;
-  }
-
-  .section-title {
-    font-size: 78px;
-    font-style: italic;
-    font-weight: 700;
-    color: #383838;
-    letter-spacing: 0.02em;
-    line-height: 1.15;
-  }
-
-  .section-list {
-    margin-top: 46px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    font-size: 61px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: #3a3a3a;
-    white-space: pre-wrap;
-  }
-
-  .home-taste-block {
-    position: absolute;
-    top: var(--home-top);
-    left: var(--content-left);
-    width: var(--content-width);
-  }
-
-  .daily-special-block {
-    position: absolute;
-    top: var(--daily-top);
-    left: var(--content-left);
-    width: var(--content-width);
-  }
-
-  .noodle-special-block {
-    position: absolute;
-    top: var(--noodle-top);
-    left: var(--content-left);
-    width: var(--content-width);
-  }
-
-  .msg {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 900px;
-    text-align: center;
-    color: #222;
-    font-size: 34px;
-    line-height: 1.6;
-    padding: 28px 32px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 14px;
-    z-index: 5;
-  }
-
-  .msg .sub {
-    display: block;
-    color: #666;
-    font-size: 22px;
-    margin-top: 10px;
-  }
-
-  .nav-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 60px;
-    height: 80px;
-    border: none;
-    border-radius: 14px;
-    font-size: 36px;
-    background: var(--arrow-bg);
-    color: #fff;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .25s ease, background .2s ease;
-    z-index: 20;
-  }
-
-  .nav-arrow.active {
-    opacity: 1;
-    background: var(--arrow-active);
-  }
-
-  .nav-arrow.left { left: 10px; }
-  .nav-arrow.right { right: 10px; }
-
-  @media (max-width: 768px) {
-    select {
-      width: 160px;
-      min-width: 160px;
-      font-size: 14px;
-      padding: 9px 10px;
-    }
-
-    .status {
-      font-size: 13px;
-    }
-
-    .nav-arrow {
-      width: 44px;
-      height: 64px;
-      font-size: 30px;
-    }
-  }
-
-  @media (max-width: 420px) {
-    select {
-      width: 150px;
-      min-width: 150px;
-    }
-
-    .status {
-      font-size: 12px;
-    }
-
-    .nav-arrow {
-      width: 40px;
-      height: 58px;
-      font-size: 28px;
-    }
-  }
-</style>
-</head>
-
-<body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <select id="dateSelect"></select>
-      <span class="status" id="statusText">Loading...</span>
-    </div>
-  </div>
-
-  <div class="viewer" id="viewer">
-    <button class="nav-arrow left" id="prevArrow" aria-label="Previous">&#8249;</button>
-
-    <div class="canvas-wrap">
-      <div id="designCanvas" class="design-canvas">
-        <div id="pageA" class="menu-page"></div>
-        <div id="pageB" class="menu-page"></div>
-      </div>
-      <div class="msg" id="msg">Loading menu...</div>
-    </div>
-
-    <button class="nav-arrow right" id="nextArrow" aria-label="Next">&#8250;</button>
-  </div>
-
-<script>
-  const SLOT_ORDER = ["breakfast", "lunch", "dinner", "supper"];
-
-  const dateSelect = document.getElementById("dateSelect");
-  const statusText = document.getElementById("statusText");
-  const viewer = document.getElementById("viewer");
-  const prevArrow = document.getElementById("prevArrow");
-  const nextArrow = document.getElementById("nextArrow");
-  const msg = document.getElementById("msg");
-  const pageA = document.getElementById("pageA");
-  const pageB = document.getElementById("pageB");
-  const designCanvas = document.getElementById("designCanvas");
-
-  let menuData = {};
-  let availableDates = [];
-  let currentDate = null;
-  let currentMenus = [];
-  let currentIndex = 0;
-  let touchStartX = 0;
-  let touchEndX = 0;
-  let arrowTimer = null;
-  let lastAutoKey = "";
-  let activePage = pageA;
-  let standbyPage = pageB;
-  let firstRenderDone = false;
-
-  function getQuery(name) {
-    return new URLSearchParams(window.location.search).get(name);
-  }
-
-  function isKioskMode() {
-    const param = getQuery("kiosk");
-    if (param === "1") return true;
-    if (param === "0") return false;
-
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    return h > w && w >= 1200;
-  }
-
-  if (isKioskMode()) {
-    document.body.classList.add("kiosk");
-  }
-
-  function resizeCanvas() {
-    const designW = 2160;
-    const designH = 3840;
-
-    const topbarHeight = document.body.classList.contains("kiosk")
-      ? 0
-      : document.querySelector(".topbar").offsetHeight;
-
-    const availW = window.innerWidth;
-    const availH = window.innerHeight - topbarHeight;
-
-    const scale = Math.min(availW / designW, availH / designH);
-    designCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
-  }
-
-  window.addEventListener("resize", resizeCanvas);
-
-  function formatFolder(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}${m}${d}`;
-  }
-
-  function formatLabel(folder) {
-    const y = folder.slice(0, 4);
-    const m = folder.slice(4, 6);
-    const d = folder.slice(6, 8);
-    const dt = new Date(`${y}-${m}-${d}T00:00:00`);
-    const weekday = dt.toLocaleDateString("en-GB", { weekday: "short" });
-    return `${d}/${m}/${y} ${weekday}`;
-  }
-
-  function getNowInfo() {
-    const now = new Date();
-    const seconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    return {
-      seconds,
-      todayFolder: formatFolder(today),
-      yesterdayFolder: formatFolder(yesterday),
-      early: seconds <= 5 * 3600
-    };
-  }
-
-  function preferredSlot(seconds) {
-    if (seconds <= 5 * 3600) return "supper";
-    if (seconds <= 10 * 3600) return "breakfast";
-    if (seconds <= 16 * 3600) return "lunch";
-    if (seconds <= 22 * 3600) return "dinner";
-    return "supper";
-  }
-
-  function showArrows() {
-    prevArrow.classList.add("active");
-    nextArrow.classList.add("active");
-
-    clearTimeout(arrowTimer);
-    arrowTimer = setTimeout(() => {
-      prevArrow.classList.remove("active");
-      nextArrow.classList.remove("active");
-    }, 1800);
-  }
-
-  function nearestIndex(menus, target) {
-    if (!menus.length) return 0;
-
-    const exact = menus.findIndex(m => {
-      if (target === "supper" && m.isYesterdaySupper) return true;
-      return m.slot === target;
-    });
-    if (exact !== -1) return exact;
-
-    const targetPos = SLOT_ORDER.indexOf(target);
-    let best = 0;
-    let dist = 99;
-
-    menus.forEach((m, i) => {
-      const pos = SLOT_ORDER.indexOf(m.slot);
-      if (pos < 0) return;
-
-      const d = Math.min(
-        (pos - targetPos + 4) % 4,
-        (targetPos - pos + 4) % 4
-      );
-
-      if (d < dist) {
-        dist = d;
-        best = i;
-      }
-    });
-
-    return best;
-  }
-
-  function createListHtml(items) {
-    return items.map(x => `<div>${escapeHtml(x)}</div>`).join("");
-  }
-
-  function escapeHtml(text) {
-    return String(text)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function buildBreakfastPage(menu) {
-    return `
-      <img class="menu-bg" src="templates/breakfast-bg.png" alt="">
-      <div class="content-layer">
-        <div class="menu-title">${escapeHtml(menu.title)}</div>
-        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
-        <div class="breakfast-lines">
-          ${createListHtml(menu.lines || [])}
-        </div>
-      </div>
-    `;
-  }
-
-  function buildMainMealPage(menu) {
-    return `
-      <img class="menu-bg" src="templates/mainmeal-bg.png" alt="">
-      <div class="content-layer">
-        <div class="menu-title">${escapeHtml(menu.title)}</div>
-        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
-
-        <div class="home-taste-block">
-          <div class="section-title">${escapeHtml(menu.homeTasteTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.homeTaste || [])}</div>
-        </div>
-
-        <div class="daily-special-block">
-          <div class="section-title">${escapeHtml(menu.dailySpecialTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.dailySpecial || [])}</div>
-        </div>
-
-        <div class="noodle-special-block">
-          <div class="section-title">${escapeHtml(menu.noodleSpecialTitle || "")}</div>
-          <div class="section-list">${createListHtml(menu.noodleSpecial || [])}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderMenuPage(menuItem, container) {
-    if (menuItem.slot === "breakfast") {
-      container.innerHTML = buildBreakfastPage(menuItem.data);
-    } else {
-      container.innerHTML = buildMainMealPage(menuItem.data);
-    }
-  }
-
-  function showMenu() {
-    if (!currentMenus.length) {
-      pageA.classList.remove("visible");
-      pageB.classList.remove("visible");
-      msg.style.display = "block";
-      msg.innerHTML = `No menu available<span class="sub">Please select another available date.</span>`;
-      statusText.textContent = "No menu available";
-      return;
-    }
-
-    const item = currentMenus[currentIndex];
-    msg.style.display = "none";
-
-    if (!firstRenderDone) {
-      renderMenuPage(item, activePage);
-      activePage.classList.add("visible");
-      firstRenderDone = true;
-    } else {
-      renderMenuPage(item, standbyPage);
-      standbyPage.classList.add("visible");
-      activePage.classList.remove("visible");
-
-      const temp = activePage;
-      activePage = standbyPage;
-      standbyPage = temp;
-    }
-
-    statusText.textContent = `${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
-  }
-
-  function next() {
-    if (!currentMenus.length) return;
-    currentIndex = (currentIndex + 1) % currentMenus.length;
-    showMenu();
-    showArrows();
-  }
-
-  function prev() {
-    if (!currentMenus.length) return;
-    currentIndex = (currentIndex - 1 + currentMenus.length) % currentMenus.length;
-    showMenu();
-    showArrows();
-  }
-
-  viewer.addEventListener("mousemove", showArrows);
-
-  viewer.addEventListener("click", (e) => {
-    showArrows();
-
-    if (e.target === prevArrow || e.target === nextArrow) return;
-    if (!currentMenus.length) return;
-
-    next();
-  });
-
-  viewer.addEventListener("touchstart", e => {
-    touchStartX = e.changedTouches[0].clientX;
-    showArrows();
-  }, { passive: true });
-
-  viewer.addEventListener("touchend", e => {
-    touchEndX = e.changedTouches[0].clientX;
-    const delta = touchEndX - touchStartX;
-    if (Math.abs(delta) < 40) return;
-    delta < 0 ? next() : prev();
-  }, { passive: true });
-
-  document.addEventListener("keydown", e => {
-    if (e.key === "ArrowLeft") prev();
-    if (e.key === "ArrowRight") next();
-  });
-
-  prevArrow.onclick = prev;
-  nextArrow.onclick = next;
-
-  async function loadJsonData() {
-    const res = await fetch(`data/menu-data.json?v=${Date.now()}`);
-    if (!res.ok) throw new Error("Failed to load menu-data.json");
-    menuData = await res.json();
-  }
-
-  function buildAvailableDates() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const result = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const folder = formatFolder(d);
-
-      if (i === 0 || menuData[folder]) {
-        result.push(folder);
-      }
-    }
-
     return result;
   }
 
@@ -1434,6 +736,17 @@
 
   async function init() {
     try {
+      msg.style.display = "block";
+      msg.innerHTML = `Loading menu...<span class="sub">Preparing template</span>`;
+      statusText.textContent = "Loading...";
+
+      resizeCanvas();
+
+      const templateReady = await preloadTemplateImages();
+      if (!templateReady) {
+        throw new Error("Failed to load template background images");
+      }
+
       await loadJsonData();
 
       availableDates = buildAvailableDates();
@@ -1446,9 +759,11 @@
         dateSelect.appendChild(opt);
       });
 
-      dateSelect.onchange = () => selectDate(dateSelect.value);
+      dateSelect.addEventListener("change", () => {
+        selectDate(dateSelect.value);
+      });
 
-      resizeCanvas();
+      designCanvas.classList.add("ready");
       await selectDate(availableDates[0]);
 
       const now = getNowInfo();
@@ -1462,11 +777,6 @@
       console.error(err);
     }
   }
-
-  init();
-</script>
-</body>
-</html>
 
   init();
 </script>

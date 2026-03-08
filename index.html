@@ -68,29 +68,163 @@
     touch-action: pan-y;
   }
 
-  .slide-stage {
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 80px;
+    border: none;
+    border-radius: 14px;
+    font-size: 36px;
+    background: var(--arrow-bg);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .25s ease, background .2s ease;
+    z-index: 20;
+  }
+
+  .nav-arrow.active {
+    opacity: 1;
+    background: var(--arrow-active);
+  }
+
+  .nav-arrow.left { left: 10px; }
+  .nav-arrow.right { right: 10px; }
+
+  body.kiosk .topbar {
+    display: none;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    width: min(100vw, calc(100vh * 2160 / 3840));
+    height: min(100vh, calc(100vw * 3840 / 2160));
+    aspect-ratio: 2160 / 3840;
+    overflow: hidden;
+    background: #f7f2e9;
+  }
+
+  body:not(.kiosk) .canvas-wrap {
+    width: min(100vw, calc((100vh - 60px) * 2160 / 3840));
+    height: min(calc(100vh - 60px), calc(100vw * 3840 / 2160));
+  }
+
+  .menu-page {
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .menu-img {
-    position: absolute;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
     opacity: 0;
-    transition: opacity 0.35s ease;
-    user-select: none;
-    -webkit-user-drag: none;
-    pointer-events: none;
+    transition: opacity .35s ease;
   }
 
-  .menu-img.visible {
+  .menu-page.visible {
     opacity: 1;
+  }
+
+  .menu-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .content-layer {
+    position: absolute;
+    inset: 0;
+    color: #333;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .presented-by {
+    position: absolute;
+    top: 3.2%;
+    left: 0;
+    width: 100%;
+    font-size: 1.1%;
+    color: #444;
+    letter-spacing: 0.02em;
+  }
+
+  .menu-title {
+    position: absolute;
+    top: 10.2%;
+    left: 0;
+    width: 100%;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 2.7%;
+    letter-spacing: 0.12em;
+    color: #333;
+  }
+
+  .menu-date {
+    position: absolute;
+    top: 14.3%;
+    left: 0;
+    width: 100%;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.8%;
+    letter-spacing: 0.08em;
+    color: #333;
+  }
+
+  .breakfast-lines {
+    position: absolute;
+    top: 27%;
+    left: 14%;
+    width: 72%;
+    display: flex;
+    flex-direction: column;
+    gap: 2.4%;
+    font-size: 1.9%;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: pre-wrap;
+  }
+
+  .section-title {
+    font-size: 2.2%;
+    font-style: italic;
+    font-weight: 700;
+    color: #333;
+    letter-spacing: 0.02em;
+  }
+
+  .section-list {
+    margin-top: 1.4%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9%;
+    font-size: 1.7%;
+    font-weight: 700;
+    line-height: 1.28;
+    white-space: pre-wrap;
+  }
+
+  .home-taste-block {
+    position: absolute;
+    top: 25.2%;
+    left: 10%;
+    width: 80%;
+  }
+
+  .daily-special-block {
+    position: absolute;
+    top: 54.2%;
+    left: 10%;
+    width: 80%;
+  }
+
+  .noodle-special-block {
+    position: absolute;
+    top: 82.2%;
+    left: 10%;
+    width: 80%;
   }
 
   .msg {
@@ -107,36 +241,6 @@
     color: #666;
     font-size: 15px;
     margin-top: 10px;
-  }
-
-  .nav-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 60px;
-    height: 80px;
-    border: none;
-    border-radius: 14px;
-    font-size: 36px;
-    background: var(--arrow-bg);
-    color: #fff;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .25s ease, background .2s ease;
-    z-index: 20;
-    pointer-events: auto;
-  }
-
-  .nav-arrow.active {
-    opacity: 1;
-    background: var(--arrow-active);
-  }
-
-  .nav-arrow.left { left: 10px; }
-  .nav-arrow.right { right: 10px; }
-
-  body.kiosk .topbar {
-    display: none;
   }
 
   @media (max-width: 768px) {
@@ -193,9 +297,9 @@
   <div class="viewer" id="viewer">
     <button class="nav-arrow left" id="prevArrow" aria-label="Previous">&#8249;</button>
 
-    <div class="slide-stage">
-      <img id="imgA" class="menu-img" alt="Menu image A">
-      <img id="imgB" class="menu-img" alt="Menu image B">
+    <div class="canvas-wrap">
+      <div id="pageA" class="menu-page"></div>
+      <div id="pageB" class="menu-page"></div>
       <div class="msg" id="msg">Loading menu...</div>
     </div>
 
@@ -203,14 +307,7 @@
   </div>
 
 <script>
-  const menuFiles = [
-    { file: "breakfast.png", label: "Breakfast", slot: "breakfast" },
-    { file: "lunch.png", label: "Lunch", slot: "lunch" },
-    { file: "dinner.png", label: "Dinner", slot: "dinner" },
-    { file: "supper.png", label: "Supper", slot: "supper" }
-  ];
-
-  const slotOrder = ["breakfast", "lunch", "dinner", "supper"];
+  const SLOT_ORDER = ["breakfast", "lunch", "dinner", "supper"];
 
   const dateSelect = document.getElementById("dateSelect");
   const statusText = document.getElementById("statusText");
@@ -218,10 +315,11 @@
   const prevArrow = document.getElementById("prevArrow");
   const nextArrow = document.getElementById("nextArrow");
   const msg = document.getElementById("msg");
+  const pageA = document.getElementById("pageA");
+  const pageB = document.getElementById("pageB");
 
-  const imgA = document.getElementById("imgA");
-  const imgB = document.getElementById("imgB");
-
+  let menuData = {};
+  let availableDates = [];
   let currentDate = null;
   let currentMenus = [];
   let currentIndex = 0;
@@ -229,9 +327,8 @@
   let touchEndX = 0;
   let arrowTimer = null;
   let lastAutoKey = "";
-  let activeImg = imgA;
-  let standbyImg = imgB;
-  let knownDates = new Set();
+  let activePage = pageA;
+  let standbyPage = pageB;
 
   function getQuery(name) {
     return new URLSearchParams(window.location.search).get(name);
@@ -267,62 +364,6 @@
     return `${d}/${m}/${y} ${weekday}`;
   }
 
-  function buildImageUrl(folder, file) {
-    return `images/${folder}/${file}?v=${folder}`;
-  }
-
-  function checkImage(url) {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => resolve(url);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  }
-
-  async function checkHasAnyMenu(folder) {
-    // 轻量检查：按优先顺序找一张存在即可
-    const probeFiles = ["lunch.png", "dinner.png", "breakfast.png", "supper.png"];
-    for (const file of probeFiles) {
-      const ok = await checkImage(buildImageUrl(folder, file));
-      if (ok) return true;
-    }
-    return false;
-  }
-
-  async function loadMenus(folder) {
-    const results = await Promise.all(
-      menuFiles.map(async item => {
-        const url = buildImageUrl(folder, item.file);
-        const ok = await checkImage(url);
-        if (!ok) return null;
-
-        return {
-          ...item,
-          url,
-          date: folder,
-          isYesterdaySupper: false
-        };
-      })
-    );
-
-    return results.filter(Boolean);
-  }
-
-  async function loadYesterdaySupper(folder) {
-    const url = buildImageUrl(folder, "supper.png");
-    const ok = await checkImage(url);
-    if (!ok) return null;
-
-    return {
-      slot: "supper",
-      label: "Yesterday Supper",
-      url,
-      date: folder,
-      isYesterdaySupper: true
-    };
-  }
-
   function getNowInfo() {
     const now = new Date();
     const seconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
@@ -349,6 +390,17 @@
     return "supper";
   }
 
+  function showArrows() {
+    prevArrow.classList.add("active");
+    nextArrow.classList.add("active");
+
+    clearTimeout(arrowTimer);
+    arrowTimer = setTimeout(() => {
+      prevArrow.classList.remove("active");
+      nextArrow.classList.remove("active");
+    }, 1800);
+  }
+
   function nearestIndex(menus, target) {
     if (!menus.length) return 0;
 
@@ -358,12 +410,12 @@
     });
     if (exact !== -1) return exact;
 
-    const targetPos = slotOrder.indexOf(target);
+    const targetPos = SLOT_ORDER.indexOf(target);
     let best = 0;
     let dist = 99;
 
     menus.forEach((m, i) => {
-      const pos = slotOrder.indexOf(m.slot);
+      const pos = SLOT_ORDER.indexOf(m.slot);
       if (pos < 0) return;
 
       const d = Math.min(
@@ -380,31 +432,138 @@
     return best;
   }
 
-  function showArrows() {
-    prevArrow.classList.add("active");
-    nextArrow.classList.add("active");
-
-    clearTimeout(arrowTimer);
-    arrowTimer = setTimeout(() => {
-      prevArrow.classList.remove("active");
-      nextArrow.classList.remove("active");
-    }, 1800);
+  function createListHtml(items) {
+    return items.map(x => `<div>${escapeHtml(x)}</div>`).join("");
   }
 
-  function swapImages(newUrl) {
-    standbyImg.src = newUrl;
-    standbyImg.classList.add("visible");
-    activeImg.classList.remove("visible");
+  function escapeHtml(text) {
+    return String(text)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
 
-    const temp = activeImg;
-    activeImg = standbyImg;
-    standbyImg = temp;
+  function buildBreakfastPage(menu) {
+    return `
+      <img class="menu-bg" src="templates/breakfast-bg.png" alt="">
+      <div class="content-layer">
+        <div class="presented-by">Presented by JR</div>
+        <div class="menu-title">${escapeHtml(menu.title)}</div>
+        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
+        <div class="breakfast-lines">
+          ${createListHtml(menu.lines || [])}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildMainMealPage(menu) {
+    return `
+      <img class="menu-bg" src="templates/mainmeal-bg.png" alt="">
+      <div class="content-layer">
+        <div class="presented-by">Presented by JR</div>
+        <div class="menu-title">${escapeHtml(menu.title)}</div>
+        <div class="menu-date">${escapeHtml(menu.date_text)}</div>
+
+        <div class="home-taste-block">
+          <div class="section-title">${escapeHtml(menu.homeTasteTitle || "")}</div>
+          <div class="section-list">${createListHtml(menu.homeTaste || [])}</div>
+        </div>
+
+        <div class="daily-special-block">
+          <div class="section-title">${escapeHtml(menu.dailySpecialTitle || "")}</div>
+          <div class="section-list">${createListHtml(menu.dailySpecial || [])}</div>
+        </div>
+
+        <div class="noodle-special-block">
+          <div class="section-title">${escapeHtml(menu.noodleSpecialTitle || "")}</div>
+          <div class="section-list">${createListHtml(menu.noodleSpecial || [])}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMenuPage(menuItem, container) {
+    if (menuItem.slot === "breakfast") {
+      container.innerHTML = buildBreakfastPage(menuItem.data);
+    } else {
+      container.innerHTML = buildMainMealPage(menuItem.data);
+    }
+  }
+
+  function swapPages(menuItem) {
+    renderMenuPage(menuItem, standbyPage);
+    standbyPage.classList.add("visible");
+    activePage.classList.remove("visible");
+
+    const temp = activePage;
+    activePage = standbyPage;
+    standbyPage = temp;
+  }
+
+  function buildMenusForDate(folder) {
+    const dayData = menuData[folder];
+    if (!dayData) return [];
+
+    const result = [];
+
+    if (dayData.breakfast) {
+      result.push({
+        slot: "breakfast",
+        label: "Breakfast",
+        data: dayData.breakfast,
+        isYesterdaySupper: false
+      });
+    }
+
+    if (dayData.lunch) {
+      result.push({
+        slot: "lunch",
+        label: "Lunch",
+        data: dayData.lunch,
+        isYesterdaySupper: false
+      });
+    }
+
+    if (dayData.dinner) {
+      result.push({
+        slot: "dinner",
+        label: "Dinner",
+        data: dayData.dinner,
+        isYesterdaySupper: false
+      });
+    }
+
+    if (dayData.supper) {
+      result.push({
+        slot: "supper",
+        label: "Supper",
+        data: dayData.supper,
+        isYesterdaySupper: false
+      });
+    }
+
+    return result;
+  }
+
+  function buildYesterdaySupper(folder) {
+    const dayData = menuData[folder];
+    if (!dayData || !dayData.supper) return null;
+
+    return {
+      slot: "supper",
+      label: "Yesterday Supper",
+      data: dayData.supper,
+      isYesterdaySupper: true
+    };
   }
 
   function showMenu() {
     if (!currentMenus.length) {
-      imgA.classList.remove("visible");
-      imgB.classList.remove("visible");
+      activePage.classList.remove("visible");
+      standbyPage.classList.remove("visible");
       msg.style.display = "block";
       msg.innerHTML = `No menu available<span class="sub">Please select another available date.</span>`;
       statusText.textContent = "No menu available";
@@ -413,7 +572,7 @@
 
     const item = currentMenus[currentIndex];
     msg.style.display = "none";
-    swapImages(item.url);
+    swapPages(item);
     statusText.textContent = `${item.label} · ${currentIndex + 1} / ${currentMenus.length}`;
   }
 
@@ -462,24 +621,38 @@
   prevArrow.onclick = prev;
   nextArrow.onclick = next;
 
-  function addDateOption(folder) {
-    if (knownDates.has(folder)) return;
-    knownDates.add(folder);
+  async function loadJsonData() {
+    const res = await fetch(`data/menu-data.json?v=${Date.now()}`);
+    if (!res.ok) throw new Error("Failed to load menu-data.json");
+    menuData = await res.json();
+  }
 
-    const option = document.createElement("option");
-    option.value = folder;
-    option.textContent = formatLabel(folder);
-    dateSelect.appendChild(option);
+  function buildAvailableDates() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const result = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const folder = formatFolder(d);
+
+      if (i === 0 || menuData[folder]) {
+        result.push(folder);
+      }
+    }
+
+    return result;
   }
 
   async function selectDate(folder) {
     currentDate = folder;
 
-    const todayMenus = await loadMenus(folder);
+    const todayMenus = buildMenusForDate(folder);
     const now = getNowInfo();
 
     if (folder === now.todayFolder && now.early) {
-      const ys = await loadYesterdaySupper(now.yesterdayFolder);
+      const ys = buildYesterdaySupper(now.yesterdayFolder);
       currentMenus = ys ? [ys, ...todayMenus] : todayMenus;
     } else {
       currentMenus = todayMenus;
@@ -489,42 +662,6 @@
     currentIndex = nearestIndex(currentMenus, slot);
 
     showMenu();
-  }
-
-  async function initTodayOnly() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const todayFolder = formatFolder(today);
-
-    dateSelect.innerHTML = "";
-    knownDates.clear();
-    addDateOption(todayFolder);
-
-    dateSelect.value = todayFolder;
-    dateSelect.onchange = () => selectDate(dateSelect.value);
-
-    await selectDate(todayFolder);
-
-    const now = getNowInfo();
-    lastAutoKey = preferredSlot(now.seconds) + (now.early ? "y" : "");
-  }
-
-  async function loadFutureDatesInBackground() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let i = 1; i < 7; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-
-      const folder = formatFolder(d);
-      const hasMenu = await checkHasAnyMenu(folder);
-
-      if (hasMenu) {
-        addDateOption(folder);
-      }
-    }
   }
 
   async function autoUpdate() {
@@ -541,9 +678,33 @@
   }
 
   async function init() {
-    await initTodayOnly();
-    loadFutureDatesInBackground();
-    setInterval(autoUpdate, 30000);
+    try {
+      await loadJsonData();
+
+      availableDates = buildAvailableDates();
+      dateSelect.innerHTML = "";
+
+      availableDates.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = formatLabel(d);
+        dateSelect.appendChild(opt);
+      });
+
+      dateSelect.onchange = () => selectDate(dateSelect.value);
+
+      await selectDate(availableDates[0]);
+
+      const now = getNowInfo();
+      lastAutoKey = preferredSlot(now.seconds) + (now.early ? "y" : "");
+      setInterval(autoUpdate, 30000);
+
+    } catch (err) {
+      msg.style.display = "block";
+      msg.innerHTML = `Unable to load menu data<span class="sub">${escapeHtml(err.message)}</span>`;
+      statusText.textContent = "Load failed";
+      console.error(err);
+    }
   }
 
   init();

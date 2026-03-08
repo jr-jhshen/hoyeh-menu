@@ -1,0 +1,48 @@
+name: Update menu JSON from Excel
+
+on:
+  push:
+    paths:
+      - "source/*.xlsx"
+      - "scripts/excel_to_json.py"
+      - ".github/workflows/update-menu.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-menu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Run Excel to JSON converter
+        run: |
+          python scripts/excel_to_json.py
+
+      - name: Commit updated JSON files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/menu-data.json data/menu-data-full.json
+
+          if git diff --cached --quiet; then
+            echo "No JSON changes to commit."
+          else
+            git commit -m "Update menu JSON from Excel"
+            git push
+          fi

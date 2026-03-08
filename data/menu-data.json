@@ -1,7 +1,7 @@
 {
-  "20260307": {
+  "20260308": {
     "breakfast": {
-      "date_text": "7/3/2026",
+      "date_text": "8/3/2026",
       "title": "BREAKFAST MENU",
       "lines": [
         "White / Wholemeal Bread with Assorted Spreads",
@@ -12,7 +12,7 @@
       ]
     },
     "lunch": {
-      "date_text": "7/3/2026",
+      "date_text": "8/3/2026",
       "title": "LUNCH MENU",
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "homeTaste": [
@@ -37,7 +37,7 @@
       ]
     },
     "dinner": {
-      "date_text": "7/3/2026",
+      "date_text": "8/3/2026",
       "title": "DINNER MENU",
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "homeTaste": [
@@ -62,7 +62,7 @@
       ]
     },
     "supper": {
-      "date_text": "7/3/2026",
+      "date_text": "8/3/2026",
       "title": "SUPPER MENU",
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "homeTaste": [

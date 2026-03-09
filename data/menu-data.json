@@ -95,81 +95,81 @@
     "breakfast": {
       "date_text": "09/03/2026",
       "lines": [
-        "White/ Wholemeal Bread w Assorted Spreads",
-        "Assorted Cereal w Milk",
-        "Fried Egg Noodle",
-        "Egg",
-        "Curry Bun"
+        "White/ Wholemeal Bread w Assorted Spreads\n白面包/全麦面包配多种抹酱",
+        "Assorted Cereal w Milk 什锦麦片配牛奶",
+        "Fried Egg Noodle 炒蛋面",
+        "Egg 鸡蛋",
+        "Curry Bun 咖喱面包"
       ],
       "title": "BREAKFAST MENU"
     },
     "lunch": {
       "dailySpecial": [
-        "Teriyaki Chicken Garlic Rice",
-        "4 x Salads (Honey Mustard and Vinaigrette )",
-        "Sweet Corn Soup",
-        "Red Bean Longan Soup"
+        "Teriyaki Chicken Garlic Rice 蒜香照烧鸡肉饭",
+        "4 x Salads (Honey Mustard and Vinaigrette )\n4份沙拉（搭配蜂蜜芥末酱与油醋汁）",
+        "Sweet Corn Soup 玉米汤",
+        "Red Bean Longan Soup 红豆龙眼汤"
       ],
       "dailySpecialTitle": "DAILY SPECIAL",
       "date_text": "09/03/2026",
       "homeTaste": [
-        "Braised Pork Belly",
-        "Steamed Soy Fish",
-        "Sweet & SourVeg Chicken",
-        "Kai Lan with Oyster Sauce",
-        "Garlic Stir Fried Cai Sim",
-        "Fried Thai StyleTofu"
+        "Braised Pork Belly 红烧肉",
+        "Steamed Soy Fish 豉油蒸鱼",
+        "Sweet & SourVeg Chicken 酸甜素鸡",
+        "Kai Lan with Oyster Sauce 蚝油芥兰",
+        "Garlic Stir Fried Cai Sim 蒜蓉炒菜心",
+        "Fried Thai StyleTofu 泰式炸豆腐"
       ],
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "noodleSpecial": [
-        "Ipoh Hor Fun"
+        "Ipoh Hor Fun 怡保河粉"
       ],
       "noodleSpecialTitle": "NOODLE SPECIAL",
       "title": "LUNCH MENU"
     },
     "dinner": {
       "dailySpecial": [
-        "Nasi Padang",
-        "4 x Salads (Honey Mustard and Vinaigrette )",
-        "Sweet Corn Soup",
-        "Red Bean Longan Soup"
+        "Nasi Padang 巴东饭",
+        "4 x Salads (Honey Mustard and Vinaigrette )\n4份沙拉（搭配蜂蜜芥末酱与油醋汁）",
+        "Sweet Corn Soup 玉米汤",
+        "Red Bean Longan Soup 红豆龙眼汤"
       ],
       "dailySpecialTitle": "DAILY SPECIAL",
       "date_text": "09/03/2026",
       "homeTaste": [
-        "Baked Chicken with Dang gui",
-        "Lemon Pepper Fish",
-        "Sez Chuan Steamed Tofu",
-        "Braised Cabbage with Mushrooms",
-        "Stir Fry Long Bean with Chilli",
-        "Luncheon Meat"
+        "Baked Chicken with Dang gui 当归烤鸡",
+        "Lemon Pepper Fish 柠檬椒盐鱼",
+        "Sez Chuan Steamed Tofu 川味蒸豆腐",
+        "Braised Cabbage with Mushrooms 香菇焖白菜",
+        "Stir Fry Long Bean with Chilli 辣炒长豆",
+        "Luncheon Meat 午餐肉"
       ],
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "noodleSpecial": [
-        "Lor Mee"
+        "Lor Mee 卤面"
       ],
       "noodleSpecialTitle": "NOODLE SPECIAL",
       "title": "DINNER MENU"
     },
     "supper": {
       "dailySpecial": [
-        "Teriyaki Chicken Garlic Rice",
-        "Sweet Corn Soup",
-        "Red Bean Longan Soup"
+        "Teriyaki Chicken Garlic Rice 蒜香照烧鸡肉饭",
+        "Sweet Corn Soup 玉米汤",
+        "Red Bean Longan Soup 红豆龙眼汤"
       ],
       "dailySpecialTitle": "DAILY SPECIAL",
       "date_text": "09/03/2026",
       "homeTaste": [
-        "Braised Pork Belly",
-        "Steamed Soy Fish",
-        "Kai Lan with Oyster Sauce",
-        "Garlic Stir Fried Cai Sim",
-        "Fried Thai StyleTofu",
-        "4 x Salads (Honey Mustard and Vinaigrette )"
+        "Braised Pork Belly 红烧肉",
+        "Steamed Soy Fish 豉油蒸鱼",
+        "Kai Lan with Oyster Sauce 蚝油芥兰",
+        "Garlic Stir Fried Cai Sim 蒜蓉炒菜心",
+        "Fried Thai StyleTofu 泰式炸豆腐",
+        "4 x Salads (Honey Mustard and Vinaigrette )\n4份沙拉（搭配蜂蜜芥末酱与油醋汁）"
       ],
       "homeTasteTitle": "HOMETASTE DAILY SELECTION",
       "noodleSpecial": [
-        "Ipoh Hor Fun"
+        "Ipoh Hor Fun 怡保河粉"
       ],
       "noodleSpecialTitle": "NOODLE SPECIAL",
       "title": "SUPPER MENU"

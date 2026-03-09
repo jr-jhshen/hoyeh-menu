@@ -362,6 +362,13 @@ def parse_sheet(ws, warnings: list[str]) -> dict:
 
 
 def find_excel_file() -> str:
+    """
+    Priority:
+    1. MENU_EXCEL_FILE env var
+    2. latest .xlsx file in source/
+    3. menu.xlsx in repo root
+    4. single .xlsx in repo root
+    """
     # Priority 1: env var
     env_path = os.environ.get("MENU_EXCEL_FILE", "").strip()
     if env_path:
@@ -369,28 +376,40 @@ def find_excel_file() -> str:
             return env_path
         raise ValidationError(f"MENU_EXCEL_FILE is set but file not found: {env_path}")
 
-    # Priority 2: menu.xlsx in repo root
+    # Priority 2: latest .xlsx in source/
+    source_dir = Path("source")
+    if source_dir.exists() and source_dir.is_dir():
+        source_candidates = [
+            p for p in source_dir.glob("*.xlsx")
+            if not p.name.startswith("~$")
+        ]
+        if source_candidates:
+            latest_file = max(source_candidates, key=lambda p: p.stat().st_mtime)
+            log_info(f"Using latest Excel file from source/: {latest_file}")
+            return str(latest_file)
+
+    # Priority 3: menu.xlsx in repo root
     preferred = Path("menu.xlsx")
     if preferred.exists():
         return str(preferred)
 
-    # Priority 3: a single .xlsx file in repo root
-    candidates = [
+    # Priority 4: single .xlsx file in repo root
+    root_candidates = [
         p for p in Path(".").glob("*.xlsx")
         if not p.name.startswith("~$")
     ]
-    if len(candidates) == 1:
-        return str(candidates[0])
+    if len(root_candidates) == 1:
+        return str(root_candidates[0])
 
-    if len(candidates) == 0:
+    if len(root_candidates) == 0:
         raise ValidationError(
-            "No Excel file found. Put 'menu.xlsx' in repo root, or set MENU_EXCEL_FILE."
+            "No Excel file found. Put an .xlsx file into 'source/' folder, or set MENU_EXCEL_FILE."
         )
 
-    names = ", ".join(sorted(p.name for p in candidates))
+    names = ", ".join(sorted(p.name for p in root_candidates))
     raise ValidationError(
-        f"Multiple Excel files found in repo root: {names}. Rename the target file to 'menu.xlsx' "
-        f"or set MENU_EXCEL_FILE."
+        f"Multiple Excel files found in repo root: {names}. "
+        f"Please put the target Excel file into 'source/' folder, or set MENU_EXCEL_FILE."
     )
 
 
@@ -506,3 +525,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

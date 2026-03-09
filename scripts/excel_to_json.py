@@ -47,8 +47,10 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 
-FULL_JSON_FILE = "menu-data-full.json"
-ROLLING_JSON_FILE = "menu-data.json"
+DATA_DIR = "data"
+
+FULL_JSON_FILE = os.path.join(DATA_DIR, "menu-data-full.json")
+ROLLING_JSON_FILE = os.path.join(DATA_DIR, "menu-data.json")
 
 # Rolling window: yesterday to future 30 days
 ROLLING_DAYS_BEFORE = 1
@@ -493,6 +495,7 @@ def validate_merged_payload(full_data: dict):
 
 
 def main():
+    os.makedirs(DATA_DIR, exist_ok=True)
     try:
         excel_path = find_excel_file()
         existing_full = read_json_file(FULL_JSON_FILE)
@@ -525,4 +528,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

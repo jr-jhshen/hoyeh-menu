@@ -19,12 +19,12 @@
 
     --breakfast-top: 1100px;
 
-    --home-top: 980px;
-    --daily-top: 2050px;
-    --noodle-top: 3120px;
+    --home-top: 930px;
+    --daily-top: 1960px;
+    --noodle-top: 2860px;
 
-    --content-left: 200px;
-    --content-width: 1760px;
+    --content-left: 220px;
+    --content-width: 1720px;
   }
 
   html, body {
@@ -179,22 +179,22 @@
   }
 
   .section-title {
-    font-size: 78px;
+    font-size: 72px;
     font-style: italic;
     font-weight: 700;
     color: #383838;
     letter-spacing: 0.02em;
-    line-height: 1.15;
+    line-height: 1.12;
   }
 
   .section-list {
-    margin-top: 46px;
+    margin-top: 34px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    font-size: 61px;
+    gap: 18px;
+    font-size: 56px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.16;
     color: #3a3a3a;
     white-space: pre-wrap;
   }
@@ -488,7 +488,7 @@
 
   function buildBreakfastPage(menu) {
     return `
-      <img class="menu-bg" src="templates/breakfast-bg.png" alt="">
+      <img class="menu-bg" src="templates/breakfast-bg.jpg" alt="">
       <div class="content-layer">
         <div class="menu-title">${escapeHtml(menu.title || "")}</div>
         <div class="menu-date">${escapeHtml(menu.date_text || "")}</div>
@@ -501,7 +501,7 @@
 
   function buildMainMealPage(menu) {
     return `
-      <img class="menu-bg" src="templates/mainmeal-bg.png" alt="">
+      <img class="menu-bg" src="templates/mainmeal-bg.jpg" alt="">
       <div class="content-layer">
         <div class="menu-title">${escapeHtml(menu.title || "")}</div>
         <div class="menu-date">${escapeHtml(menu.date_text || "")}</div>
@@ -616,8 +616,8 @@
 
   async function preloadTemplateImages() {
     const results = await Promise.all([
-      preloadImage("templates/breakfast-bg.png"),
-      preloadImage("templates/mainmeal-bg.png")
+      preloadImage("templates/breakfast-bg.jpg"),
+      preloadImage("templates/mainmeal-bg.jpg")
     ]);
     return results.every(Boolean);
   }
